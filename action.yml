@@ -1,0 +1,42 @@
+# $schema=https://www.schemastore.org/github-action.json
+name: "Upload Release Asset"
+description: "Upload an asset to a GitHub Release."
+
+inputs:
+  upload-url:
+    description: "URL to use to upload the asset (you get this when you create the Release)."
+    required: true
+  github-api-token:
+    description: "The GitHub API token to use for authentication"
+    required: false
+    default: ${{ github.token }}
+  file-path:
+    description: "The path to the file to upload"
+    required: true
+  content-type:
+    description: "The Content-Type of the file to upload"
+    required: false
+    default: ""
+  asset-name:
+    description: "The file name to give the asset within the Release"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: "Upload asset"
+      shell: bash
+      env:
+        UPLOAD_URL: ${{ inputs.upload-url }}
+        GITHUB_API_TOKEN: ${{ inputs.github-api-token }}
+        FILE_PATH: ${{ inputs.file-path }}
+        CONTENT_TYPE: ${{ inputs.content-type }}
+        ASSET_NAME: ${{ inputs.asset-name }}
+      run: |
+        set -euo pipefail
+        
+        SCRIPT="${GITHUB_ACTION_PATH}/upload-release-asset.sh"
+        chmod +x "${SCRIPT}"
+        "${SCRIPT}"
