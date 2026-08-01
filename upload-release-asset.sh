@@ -6,6 +6,14 @@ if [[ ! -f "${FILE_PATH}" ]]; then
   exit 1
 fi
 
+if [[ -z "${ASSET_NAME:-}" ]]; then
+  ASSET_NAME=$(basename "${FILE_PATH}")
+fi
+
+if [[ -z "${CONTENT_TYPE:-}" ]]; then
+  CONTENT_TYPE=$(file --brief --mime "${FILE_PATH}")
+fi
+
 API_HEADERS=(
   --header "Accept: application/vnd.github+json"
   --header "Authorization: Bearer ${GITHUB_API_TOKEN}"
@@ -18,7 +26,9 @@ fi
 
 ENCODED_ASSET_NAME=$(jq -nr --arg value "${ASSET_NAME}" '$value | @uri')
 
-echo "Uploading ${FILE_PATH} as ${ASSET_NAME}..."
+echo "Uploading ${FILE_PATH}"
+echo "Name: ${ASSET_NAME}"
+echo "Content-Type: ${CONTENT_TYPE}"
 curl --silent --show-error --fail-with-body \
   --request POST \
   "${API_HEADERS[@]}" \

@@ -15,12 +15,8 @@ inputs:
     required: true
   content-type:
     description: "The Content-Type of the file to upload"
-    required: false
-    default: ""
   asset-name:
     description: "The file name to give the asset within the Release"
-    required: false
-    default: ""
 
 runs:
   using: "composite"
