@@ -10,13 +10,11 @@ inputs:
     description: "The GitHub API token to use for authentication"
     required: false
     default: ${{ github.token }}
-  file-path:
-    description: "The path to the file to upload"
+  path:
+    description: "The path to the file(s) to upload. May be a glob pattern."
     required: true
   content-type:
     description: "The Content-Type of the file to upload"
-  asset-name:
-    description: "The file name to give the asset within the Release"
 
 runs:
   using: "composite"
@@ -27,9 +25,8 @@ runs:
       env:
         UPLOAD_URL: ${{ inputs.upload-url }}
         GITHUB_API_TOKEN: ${{ inputs.github-api-token }}
-        FILE_PATH: ${{ inputs.file-path }}
+        ASSETS_PATH: ${{ inputs.path }}
         CONTENT_TYPE: ${{ inputs.content-type }}
-        ASSET_NAME: ${{ inputs.asset-name }}
       run: |
         set -euo pipefail
         

@@ -1,37 +1,41 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ ! -f "${FILE_PATH}" ]]; then
-  echo "::error::file does not exist: ${FILE_PATH}" >&2
-  exit 1
-fi
-
-if [[ -z "${ASSET_NAME:-}" ]]; then
-  ASSET_NAME=$(basename "${FILE_PATH}")
-fi
-
-if [[ -z "${CONTENT_TYPE:-}" ]]; then
-  CONTENT_TYPE=$(file --brief --mime "${FILE_PATH}")
-fi
-
 API_HEADERS=(
   --header "Accept: application/vnd.github+json"
   --header "Authorization: Bearer ${GITHUB_API_TOKEN}"
   --header "X-GitHub-Api-Version: 2026-03-10"
 )
 
-if [[ -z "${ASSET_NAME:-}" ]]; then
-  ASSET_NAME=$(basename "${FILE_PATH}")
+mapfile -t files < <(compgen -G "${ASSETS_PATH}")
+
+if [[ ${#files[@]} -eq 0 ]]; then
+    echo "::error::No files matched: ${ASSETS_PATH}"
+    exit 1
 fi
 
-ENCODED_ASSET_NAME=$(jq -nr --arg value "${ASSET_NAME}" '$value | @uri')
+for file in "${files[@]}"; do
+  echo "::group::Uploading ${file}"
 
-echo "Uploading ${FILE_PATH}"
-echo "Name: ${ASSET_NAME}"
-echo "Content-Type: ${CONTENT_TYPE}"
-curl --silent --show-error --fail-with-body \
-  --request POST \
-  "${API_HEADERS[@]}" \
-  --header "Content-Type: ${CONTENT_TYPE}" \
-  --data-binary "@${FILE_PATH}" \
-  "${UPLOAD_URL}?name=${ENCODED_ASSET_NAME}" >/dev/null
+  asset_name=$(basename "${file}")
+
+  if [[ -n "${CONTENT_TYPE:-}" ]]; then
+    asset_content_type="${CONTENT_TYPE}"
+  else
+    asset_content_type=$(file --brief --mime "${file}")
+  fi
+
+  echo "Name: ${asset_name}"
+  echo "Content-Type: ${asset_content_type}"
+
+  encoded_asset_name=$(jq -nr --arg value "${asset_name}" '$value | @uri')
+
+  curl --silent --show-error --fail-with-body \
+    --request POST \
+    "${API_HEADERS[@]}" \
+    --header "Content-Type: ${asset_content_type}" \
+    --data-binary "@${file}" \
+    "${UPLOAD_URL}?name=${encoded_asset_name}" >/dev/null
+
+  echo "::endgroup::"
+done
